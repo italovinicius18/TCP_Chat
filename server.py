@@ -33,41 +33,84 @@ clients, names = [], []
  
 server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 server.bind(ADDRESS)
-server.listen()
+ 
+# Lists that will contains
+# all the clients connected to
+# the server and their names.
+clients, names = [], []
+ 
+# Create a new socket for
+# the server
+server = socket.socket(socket.AF_INET,
+                       socket.SOCK_STREAM)
+ 
+# bind the address of the
+# server to the socket
+server.bind(ADDRESS)
  
 # function to start the connection
 def startChat():
    
-    print("server is working on " + SERVER)
+    print(f"Servidor funcionando no endereço: {ADDRESS[0]}:{ADDRESS[1]}")
+     
+    # listening for connections
+    server.listen()
      
     while True:
-        try:
        
-            # accept connections and returns
-            # a new connection to the client
-            #  and  the address bound to it
-            conn, addr =  server.accept()
-            
-            # 1024 represents the max amount
-            # of data that can be received (bytes)
-            message = conn.recv(1024).decode(FORMAT)
-            
-            handle_message(message, conn)
-            
-            conn.send('Connection successful!'.encode(FORMAT))
-            
-            # Start the handling thread
-            thread = threading.Thread(target = handle,
-                                    args = (conn, addr))
-            thread.start()
-            
-            # no. of clients connected
-            # to the server
-            print(f"active connections {threading.activeCount()-1}")
-        
-        except KeyboardInterrupt:
-            print("\nErro! Server is closed")
-            server.close()
+        # accept connections and returns
+        # a new connection to the client
+        #  and  the address bound to it
+        conn, addr =  server.accept()
+        # conn.send("NAME".encode(FORMAT))
+         
+        # 1024 represents the max amount
+        # of data that can be received (bytes)
+        name = conn.recv(1024).decode(FORMAT)
+         
+        # append the name and client
+        # to the respective list
+        names.append(name)
+        clients.append(conn)
+         
+        print(f"Name is :{name}")
+         
+        # broadcast message
+        broadcastMessage(f"{name} has joined the chat!".encode(FORMAT))
+         
+        conn.send('Connection successful!'.encode(FORMAT))
+         
+        # Start the handling thread
+        thread = threading.Thread(target = handle,
+                                  args = (conn, addr))
+        thread.start()
+         
+        # no. of clients connected
+        # to the server
+        print(f"active connections {threading.activeCount()-1}")
+ 
+# method to handle the
+# incoming messages
+def handle(conn, addr):
+   
+    print(f"new connection {addr}")
+    connected = True
+     
+    while connected:
+          # receive message
+        message = conn.recv(1024)
+         
+        # broadcast message
+        broadcastMessage(message)
+     
+    # close the connection
+    conn.close()
+ 
+# method for broadcasting
+# messages to the each clients
+def broadcastMessage(message):
+    for client in clients:
+        client.send(message)
  
 def handle_message(message, conn):
     if message.startswith("GROUP_"):
@@ -82,49 +125,7 @@ def handle_message(message, conn):
         data[group]["cliente"] = conn
 
     print(data)
-
-# method to handle the
-# incoming messages
-def handle(conn, addr):
-   
-    print(f"new connection {addr}")
-    connected = True
     
-    try:
-        while connected:
-            # receive message
-            message = conn.recv(1024)
-
-            handle_message(message, conn)
-
-            print(message)
-            
-            # broadcast message
-            broadcastMessage(message)
-        
-        # close the connection
-        conn.close()
-    except:
-        print("Erro ao lidar com mensagem do cliente")
-        server.close()
-        exit()
- 
-# method for broadcasting
-# messages to the each clients
-def broadcastMessage(message):
-    try:
-        for client in clients:
-            client.send(message)
-    except:
-        print("Erro ao enviar mensagem")
-        server.close()
-        exit()
- 
 # call the method to
 # begin the communication
-try:
-    startChat()
-except KeyboardInterrupt:
-    print("\nServer is closed")
-    server.close()
-    exit()
+startChat()

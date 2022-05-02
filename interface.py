@@ -75,7 +75,7 @@ class GUI:
             print(f"Login valido {login_name}")
             window.destroy()
             self.login_name_nick = login_name
-            self.goAhead()
+            self.build_groups()
         else:
             messagebox.showinfo('Alerta!', 'O apelido precisa ter tamanho maior que 5 caracteres')
 
@@ -87,7 +87,7 @@ class GUI:
         else:
             print("Grupo valido")
             self.groups.append(group_name)
-            client.send(f"GROUP_{group_name}_NICK_{self.login_name_nick}".encode(FORMAT))
+            client.send(f"{self.login_name_nick}".encode(FORMAT))
             window_groups.destroy()
             window.destroy()
             
@@ -95,16 +95,7 @@ class GUI:
 
     def access_group(self,window,group_name):
         print("Acessando grupo {}".format(group_name))
-        window.destroy()
-
-        self.build_chat(group_name)
-    
-    def goAhead(self):
-        self.build_groups()
-         
-        # the thread to receive messages
-        rcv = threading.Thread(target=self.receive)
-        rcv.start()
+        self.go_ahead(window,group_name)
 
     def create_group(self,window_groups):
         HEIGHT = 200
@@ -178,7 +169,6 @@ class GUI:
 
         self.window.mainloop()
 
-
     def build_chat(self,group_name):
         self.window = Tk()
         self.window.resizable(False, False)
@@ -199,92 +189,92 @@ class GUI:
 
         self.disable_resize(self.frame_chat)
             
-        self.labelHead = Label(self.frame_chat,bg = DARK,fg = "white",text = group_name ,font = "Helvetica 13 bold",pady = 5)
+        self.label_head = Label(self.frame_chat,bg = DARK,fg = "white",text = group_name ,font = "Helvetica 13 bold",pady = 5)
             
-        self.labelHead.place(relwidth = 1)
+        self.label_head.place(relwidth = 1)
         self.line = Label(self.frame_chat,width = int(WIDTH/3),bg = DARK)
             
         self.line.place(relwidth = 1,rely = 0.07,relheight = 0.012)
             
-        self.textCons = Text(self.frame_chat,width = 20,height = 2,bg = DARKCYAN,fg = "#EAECEE",font = "Helvetica 14",padx = 5,pady = 5)
+        self.text_cons = Text(self.frame_chat,width = 20,height = 2,bg = DARKCYAN,fg = "#EAECEE",font = "Helvetica 14",padx = 5,pady = 5)
             
-        self.textCons.place(relheight = 0.745,relwidth = 1,rely = 0.08)
+        self.text_cons.place(relheight = 0.745,relwidth = 1,rely = 0.08)
             
-        self.labelBottom = Label(self.frame_chat,bg = DARKCYAN,height = 80)
+        self.label_bottom = Label(self.frame_chat,bg = DARKCYAN,height = 80)
             
-        self.labelBottom.place(relwidth = 1,rely = 0.825)
+        self.label_bottom.place(relwidth = 1,rely = 0.825)
             
-        self.entryMsg = Entry(self.labelBottom,bg = DARKCYAN,fg = "#EAECEE",font = "Helvetica 13")
+        self.entry_msg = Entry(self.label_bottom,bg = DARKCYAN,fg = "#EAECEE",font = "Helvetica 13")
             
         # place the given widget
         # into the gui window
-        self.entryMsg.place(relwidth = 0.74,relheight = 0.06,rely = 0.008,relx = 0.011)
+        self.entry_msg.place(relwidth = 0.74,relheight = 0.06,rely = 0.008,relx = 0.011)
             
-        self.entryMsg.focus()
+        self.entry_msg.focus()
             
         # create a Send Button
-        self.buttonMsg = Button(self.labelBottom,text = "Send",font = "Helvetica 10 bold",width = 20,bg = DARKCYAN,command = lambda : self.sendButton(self.entryMsg.get()))
+        self.button_msg = Button(self.label_bottom,text = "Send",font = "Helvetica 10 bold",width = 20,bg = SALMON, fg="white",command = lambda : self.send_button(self.entry_msg.get()))
             
-        self.buttonMsg.place(relx = 0.77,rely = 0.008,relheight = 0.06,relwidth = 0.22)
+        self.button_msg.place(relx = 0.77,rely = 0.008,relheight = 0.06,relwidth = 0.22)
             
-        self.textCons.config(cursor = "arrow")
+        self.text_cons.config(cursor = "arrow")
             
         # create a scroll bar
-        self.scrollbar = Scrollbar(self.textCons)
+        self.scrollbar = Scrollbar(self.text_cons)
         
         # place the scroll bar
         # into the gui window
         self.scrollbar.place(relheight = 1,relx = 0.974)
             
-        self.scrollbar.config(command = self.textCons.yview)
+        self.scrollbar.config(command = self.text_cons.yview)
             
-        self.textCons.config(state = DISABLED)
+        self.text_cons.config(state = DISABLED)
+
+        # the thread to receive messages
+        rcv = threading.Thread(target=self.receive)
+        rcv.start()
 
         self.window.mainloop()
 
+    def go_ahead(self,window, group_name):
+        window.destroy()
+        self.build_chat(group_name)
+
     # function to basically start the thread for sending messages
-    def sendButton(self, msg):
-        self.textCons.config(state = DISABLED)
+    def send_button(self, msg):
+        self.text_cons.config(state = DISABLED)
         self.msg=msg
-        self.entryMsg.delete(0, END)
-        snd= threading.Thread(target = self.sendMessage)
+        self.entry_msg.delete(0, END)
+        snd= threading.Thread(target = self.send_message)
         snd.start()
 
     # function to receive messages
     def receive(self):
+        print("Receiving messages...")
         while True:
-            try:
-                message = client.recv(1024).decode(FORMAT)
-                print(message)
-                # if the messages from the server is NAME send the client's name
-                if message == 'NAME':
-                    print(self.login_name_nick)
-                    client.send(self.login_name_nick.encode(FORMAT))
-                else:
-                    # insert messages to text box
-                    self.textCons.config(state = NORMAL)
-                    self.textCons.insert(END,
-                                         message+"\n\n")
-                     
-                    self.textCons.config(state = DISABLED)
-                    self.textCons.see(END)
-            except:
-                # an error will be printed on the command line or console if there's an error
-                print("Ocorreu um erro ao receber mensagens")
-                client.close()
-                break
+            message = client.recv(1024).decode(FORMAT)
+            print(message)
+            # if the messages from the server is NAME send the client's name
+            if message == 'NAME':
+                print("Enviando nome...")
+                client.send(self.login_name_nick.encode(FORMAT))
+            else:
+                # insert messages to text box
+                self.text_cons.config(state = NORMAL)
+                self.text_cons.insert(END,
+                                        message+"\n\n")
+                    
+                self.text_cons.config(state = DISABLED)
+                self.text_cons.see(END)
          
     # function to send messages
-    def sendMessage(self):
-        self.textCons.config(state=DISABLED)
+    def send_message(self):
+        self.text_cons.config(state=DISABLED)
         while True:
             message = (f"{self.login_name_nick}: {self.msg}")
             client.send(message.encode(FORMAT))   
             break   
 
 if __name__ == '__main__':
-    try:
-        interface = GUI()
-    except:
-        print("Ocorreu algum erro!")
-        client.close()
+    init= threading.Thread(target = GUI())
+    init.start()
