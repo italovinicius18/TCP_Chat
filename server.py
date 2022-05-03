@@ -41,15 +41,14 @@ clients, names = [], []
  
 # Create a new socket for
 # the server
-server = socket.socket(socket.AF_INET,
-                       socket.SOCK_STREAM)
+server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
  
 # bind the address of the
 # server to the socket
 server.bind(ADDRESS)
  
 # function to start the connection
-def startChat():
+def start_chat():
    
     print(f"Servidor funcionando no endereço: {ADDRESS[0]}:{ADDRESS[1]}")
      
@@ -73,12 +72,12 @@ def startChat():
         names.append(name)
         clients.append(conn)
          
-        print(f"Name is :{name}")
+        print(f"O nome é :{name}")
          
         # broadcast message
-        broadcastMessage(f"{name} has joined the chat!".encode(FORMAT))
+        broadcast_message(f"{name} entrou no chat!\n".encode(FORMAT))
          
-        conn.send('Connection successful!'.encode(FORMAT))
+        conn.send('Conexão feita!'.encode(FORMAT))
          
         # Start the handling thread
         thread = threading.Thread(target = handle,
@@ -87,13 +86,13 @@ def startChat():
          
         # no. of clients connected
         # to the server
-        print(f"active connections {threading.activeCount()-1}")
+        print(f"Qtd de conexões ativas {threading.activeCount()-1}")
  
 # method to handle the
 # incoming messages
 def handle(conn, addr):
    
-    print(f"new connection {addr}")
+    print(f"Nova conexão {addr}")
     connected = True
      
     while connected:
@@ -101,14 +100,14 @@ def handle(conn, addr):
         message = conn.recv(1024)
          
         # broadcast message
-        broadcastMessage(message)
+        broadcast_message(message)
      
     # close the connection
     conn.close()
  
 # method for broadcasting
 # messages to the each clients
-def broadcastMessage(message):
+def broadcast_message(message):
     for client in clients:
         client.send(message)
  
@@ -128,4 +127,4 @@ def handle_message(message, conn):
     
 # call the method to
 # begin the communication
-startChat()
+start_chat()
